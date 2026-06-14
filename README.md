@@ -1,4 +1,4 @@
-# 🏆 Zurullo World Cup
+# Zurullo World Cup
 
 Web de la polla del Mundial 2026 para 4 jugadores. Cada uno pone sus pronósticos
 de cada partido y **a las 00:00 del día del partido se cierra automáticamente**
@@ -35,7 +35,7 @@ Abre la URL que muestra (http://localhost:5173).
 ### 4. Login y PINs
 - En la pantalla de inicio cada jugador elige su nombre y escribe un PIN.
 - **La primera vez que entras, el PIN que pongas queda guardado** como el tuyo.
-- **Yisas** es el administrador (👑): tiene la pestaña **Admin** para cargar los
+- **Yisas** es el administrador: tiene la pestaña **Admin** para cargar los
   resultados reales y los bonus.
 
 ---
@@ -49,13 +49,13 @@ Abre la URL que muestra (http://localhost:5173).
 ---
 
 ## Cómo se usa
-- **⚽ Pronósticos:** pones tu marcador por partido. Los pronósticos de los demás
+- **Pronósticos:** pones tu marcador por partido. Los pronósticos de los demás
   están ocultos (🔒) hasta que cierra cada partido, para que nadie copie.
-- **🏆 Tabla:** posiciones en vivo con desempates.
-- **⭐ Bonus:** campeón, subcampeón, goleador y peor selección (se cierran al
+- **Tabla:** posiciones en vivo con desempates.
+- **Bonus:** campeón, subcampeón, goleador y peor selección (se cierran al
   empezar el Mundial).
-- **🛠️ Admin** (solo Yisas): carga resultados reales → la tabla se actualiza sola.
-- **📜 Reglas:** el reglamento.
+- **Admin** (solo Yisas): carga resultados reales → la tabla se actualiza sola.
+- **Reglas:** el reglamento.
 
 ## Reglas clave
 - 3 pts marcador exacto · 1 pt acertar tendencia · 0 si fallas.
