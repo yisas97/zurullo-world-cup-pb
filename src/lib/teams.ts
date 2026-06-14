@@ -1,0 +1,60 @@
+// Equivalencias entre el nombre en español (nuestra BD) y el inglés de TheSportsDB.
+export const ES_TO_EN: Record<string, string> = {
+  'México': 'Mexico',
+  'Sudáfrica': 'South Africa',
+  'Corea del Sur': 'South Korea',
+  'República Checa': 'Czech Republic',
+  'Canadá': 'Canada',
+  'Bosnia y Herzegovina': 'Bosnia-Herzegovina',
+  'Estados Unidos': 'USA',
+  'Paraguay': 'Paraguay',
+  'Catar': 'Qatar',
+  'Suiza': 'Switzerland',
+  'Brasil': 'Brazil',
+  'Marruecos': 'Morocco',
+  'Haití': 'Haiti',
+  'Escocia': 'Scotland',
+  'Australia': 'Australia',
+  'Turquía': 'Turkey',
+  'Alemania': 'Germany',
+  'Curazao': 'Curaçao',
+  'Países Bajos': 'Netherlands',
+  'Japón': 'Japan',
+  'Costa de Marfil': 'Ivory Coast',
+  'Ecuador': 'Ecuador',
+  'Suecia': 'Sweden',
+  'Túnez': 'Tunisia',
+  'España': 'Spain',
+  'Cabo Verde': 'Cape Verde',
+  'Bélgica': 'Belgium',
+  'Egipto': 'Egypt',
+  'Arabia Saudí': 'Saudi Arabia',
+  'Uruguay': 'Uruguay',
+  'Irán': 'Iran',
+  'Nueva Zelanda': 'New Zealand',
+  'Francia': 'France',
+  'Senegal': 'Senegal',
+  'Irak': 'Iraq',
+  'Noruega': 'Norway',
+  'Argentina': 'Argentina',
+  'Argelia': 'Algeria',
+  'Austria': 'Austria',
+  'Jordania': 'Jordan',
+  'Portugal': 'Portugal',
+  'RD Congo': 'DR Congo',
+  'Inglaterra': 'England',
+  'Croacia': 'Croatia',
+  'Ghana': 'Ghana',
+  'Panamá': 'Panama',
+  'Uzbekistán': 'Uzbekistan',
+  'Colombia': 'Colombia',
+}
+
+// Normaliza para comparar sin tildes / mayúsculas / guiones.
+export const norm = (s: string) =>
+  s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '')
+
+// inglés normalizado -> español
+export const EN_NORM_TO_ES: Record<string, string> = Object.fromEntries(
+  Object.entries(ES_TO_EN).map(([es, en]) => [norm(en), es]),
+)
