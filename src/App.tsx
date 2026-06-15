@@ -10,6 +10,7 @@ import Admin from './components/Admin'
 import Rules from './components/Rules'
 import NotConfigured from './components/NotConfigured'
 import trophy from './assets/trophy.png'
+import { exportToExcel } from './lib/export'
 
 type Tab = 'pronos' | 'tabla' | 'bonus' | 'admin' | 'reglas'
 
@@ -120,7 +121,19 @@ export default function App() {
             preds={preds} onSaved={refresh}
           />
         )}
-        {!loading && tab === 'tabla' && <Standings standings={standings} />}
+        {!loading && tab === 'tabla' && (
+          <>
+            <div className="mb-3 flex justify-end">
+              <button
+                onClick={() => exportToExcel({ standings, players, matches, preds, bonus })}
+                className="rounded-lg bg-white/10 px-4 py-1.5 text-sm font-semibold hover:bg-white/20"
+              >
+                Descargar Excel
+              </button>
+            </div>
+            <Standings standings={standings} />
+          </>
+        )}
         {!loading && tab === 'bonus' && (
           <Bonus session={session} players={players} bonus={bonus} matches={matches} onSaved={refresh} />
         )}

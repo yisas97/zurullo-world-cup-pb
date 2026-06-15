@@ -21,6 +21,12 @@ export const dayLabel = (iso: string) => {
   const s = fmtDay.format(new Date(iso))
   return s.charAt(0).toUpperCase() + s.slice(1)
 }
+
+// Fecha compacta "16/06"
+const fmtShort = new Intl.DateTimeFormat('es-PE', {
+  day: '2-digit', month: '2-digit', timeZone: 'America/Lima',
+})
+export const shortDate = (iso: string) => fmtShort.format(new Date(iso))
 export const timeLabel = (iso: string) => fmtTime.format(new Date(iso))
 export const dayKey = (iso: string) =>
   new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Lima' }).format(new Date(iso))

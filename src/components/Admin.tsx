@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import * as api from '../lib/api'
 import type { Match, Session } from '../lib/types'
-import { dayLabel, timeLabel } from '../lib/util'
+import { shortDate, timeLabel } from '../lib/util'
 
 export default function Admin({
   session, matches, onSaved,
@@ -107,8 +107,8 @@ function ResultRow({ m, session, onSaved }: { m: Match; session: Session; onSave
 
   return (
     <div className="flex flex-wrap items-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] p-2 text-sm">
-      <span className="hidden w-40 shrink-0 text-xs text-white/40 sm:block">
-        {dayLabel(m.kickoff).slice(0, 12)} {timeLabel(m.kickoff)}
+      <span className="hidden w-24 shrink-0 text-xs text-white/40 sm:block">
+        {shortDate(m.kickoff)} · {timeLabel(m.kickoff)}
       </span>
       <span className="flex-1 text-right">{m.home_team} {m.home_flag}</span>
       <input type="number" min={0} value={home} onChange={e => setHome(e.target.value)}
