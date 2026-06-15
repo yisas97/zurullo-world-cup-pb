@@ -1,9 +1,18 @@
 import type { Standing } from '../lib/types'
+import Intro from './Intro'
 
 const medal = ['🥇', '🥈', '🥉']
 
 export default function Standings({ standings }: { standings: Standing[] }) {
   return (
+    <div>
+    <Intro title="Tabla general">
+      <p>
+        La clasificación se actualiza sola cuando se cargan los resultados. Incluye los puntos de
+        partidos más los bonus. En caso de empate, gana quien tenga más <b>marcadores exactos</b> y
+        luego quien <b>acertó al campeón</b>.
+      </p>
+    </Intro>
     <div className="overflow-hidden rounded-xl border border-white/10">
       <table className="w-full text-sm">
         <thead className="bg-white/10 text-left text-xs uppercase tracking-wide text-white/60">
@@ -35,6 +44,7 @@ export default function Standings({ standings }: { standings: Standing[] }) {
       <p className="bg-black/30 px-3 py-2 text-xs text-white/40">
         Desempate: más marcadores exactos → acertar al campeón.
       </p>
+    </div>
     </div>
   )
 }

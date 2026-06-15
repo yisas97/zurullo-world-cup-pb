@@ -2,7 +2,9 @@ import { useEffect, useMemo, useState } from 'react'
 import * as api from '../lib/api'
 import type { LiveScore } from '../lib/api'
 import type { Match, Player, Prediction, Session } from '../lib/types'
-import { countdown, dayKey, dayLabel, isLocked, liveLabel, points, timeLabel } from '../lib/util'
+import { countdown, dayKey, dayLabel, isLocked, liveLabel, points, shortDate, timeLabel } from '../lib/util'
+
+import Intro from './Intro'
 
 type Live = { hs: number; as: number; status: string }
 
@@ -57,6 +59,21 @@ export default function Predictions({
 
   return (
     <div>
+      <Intro title="¿Cómo jugar?">
+        <p>
+          Escribe tu marcador en los partidos <span className="font-semibold text-yellow-300">Abiertos</span> y
+          pulsa <b>Guardar</b>. Cada partido se cierra a la medianoche (hora Perú) del día que se juega;
+          después ya no se puede cambiar. Ganas <b>3 puntos</b> por marcador exacto y <b>1</b> por acertar
+          quién gana o el empate.
+        </p>
+        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs">
+          <span><span className="font-semibold text-yellow-300">●</span> Abierto (puedes pronosticar)</span>
+          <span><span className="font-semibold text-red-300">●</span> En vivo</span>
+          <span><span className="font-semibold text-green-300">●</span> Finalizado</span>
+          <span><span className="font-semibold text-white/50">●</span> Cerrado / esperando</span>
+        </div>
+      </Intro>
+
       <div className="mb-4 flex gap-2">
         {jornadas.map(j => (
           <button
@@ -141,7 +158,7 @@ function MatchCard({
     <div className={`rounded-xl border bg-white/[0.03] p-3 ${played ? 'border-green-500/20' : inPlay ? 'border-red-500/30' : !locked ? 'border-yellow-500/25' : 'border-white/10'}`}>
       <div className="mb-3 flex items-center justify-between text-xs">
         <span className="rounded bg-white/10 px-2 py-0.5 font-semibold text-white/70">
-          Grupo {m.grupo} · {timeLabel(m.kickoff)}
+          {shortDate(m.kickoff)} · {timeLabel(m.kickoff)} · Grupo {m.grupo}
         </span>
         {statusBadge}
       </div>

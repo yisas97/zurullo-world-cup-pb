@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import * as api from '../lib/api'
 import type { Match, Session } from '../lib/types'
 import { shortDate, timeLabel } from '../lib/util'
+import Intro from './Intro'
 
 export default function Admin({
   session, matches, onSaved,
@@ -13,9 +14,14 @@ export default function Admin({
 
   return (
     <div className="space-y-6">
-      <section className="rounded-xl border border-yellow-500/30 bg-yellow-500/5 p-4 text-sm text-yellow-200">
-        Panel de administrador. Lo que cargues aquí actualiza la tabla de todos.
-      </section>
+      <Intro title="Panel de administrador">
+        <p>
+          Aquí cargas los <b>resultados reales</b> de cada partido: escribe el marcador y pulsa
+          <b> Guardar</b>, o usa <b>"Traer resultados reales"</b> para traer los partidos ya terminados
+          automáticamente. Apenas guardas un resultado, los puntos y la tabla se actualizan solos para
+          todos. Más abajo puedes fijar los <b>resultados de los bonus</b> (campeón, subcampeón, goleador).
+        </p>
+      </Intro>
 
       <section>
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -107,7 +113,7 @@ function ResultRow({ m, session, onSaved }: { m: Match; session: Session; onSave
 
   return (
     <div className="flex flex-wrap items-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] p-2 text-sm">
-      <span className="hidden w-24 shrink-0 text-xs text-white/40 sm:block">
+      <span className="w-full shrink-0 text-xs text-white/40 sm:w-24">
         {shortDate(m.kickoff)} · {timeLabel(m.kickoff)}
       </span>
       <span className="flex-1 text-right">{m.home_team} {m.home_flag}</span>

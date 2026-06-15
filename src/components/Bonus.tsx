@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import * as api from '../lib/api'
 import type { BonusRow, Match, Player, Session } from '../lib/types'
+import Intro from './Intro'
 
 const WORST_TEAMS = [
   'Irak', 'Sudáfrica', 'Arabia Saudí', 'Jordania', 'Bosnia y Herzegovina',
@@ -52,6 +53,14 @@ export default function Bonus({
 
   return (
     <div className="space-y-6">
+      <Intro title="Apuestas bonus">
+        <p>
+          Elige tu <b>campeón</b> (+10), <b>subcampeón</b> (+5), <b>goleador</b> (+5) y la <b>peor
+          selección</b>. Se cierran al empezar el Mundial; después puedes ver las de todos. La peor
+          selección suma 1 punto por cada 3 goles que reciba y 1 por cada gol que meta.
+        </p>
+      </Intro>
+
       <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
         <h3 className="mb-1 font-bold">Tus apuestas bonus</h3>
         <p className="mb-4 text-xs text-white/50">
