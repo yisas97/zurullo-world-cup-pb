@@ -88,14 +88,48 @@ export async function fetchRealResults(): Promise<RealResult[]> {
   if (!res.ok) throw new Error('No se pudo consultar TheSportsDB (' + res.status + ')')
   const json = await res.json()
   const events: any[] = json.events || []
+  // Solo partidos REALMENTE terminados (no en juego ni por empezar).
+  // FT=fin, AET=tras prórroga, PEN/AP=tras penales. (HT, 1H, 2H, NS = se ignoran)
+  const FINISHED = new Set(['FT', 'AET', 'PEN', 'AP', 'Match Finished'])
   const out: RealResult[] = []
   for (const e of events) {
+    if (!FINISHED.has(String(e.strStatus ?? '').trim())) continue // no terminado
     const hs = e.intHomeScore, aw = e.intAwayScore
-    if (hs == null || aw == null || hs === '' || aw === '') continue // sin jugar
+    if (hs == null || aw == null || hs === '' || aw === '') continue
     const home = EN_NORM_TO_ES[norm(String(e.strHomeTeam ?? ''))]
     const away = EN_NORM_TO_ES[norm(String(e.strAwayTeam ?? ''))]
     if (!home || !away) continue // equipo no reconocido (se ignora)
     out.push({ home, away, hs: Number(hs), as: Number(aw) })
+  }
+  return out
+}
+
+// Partidos EN JUEGO ahora mismo (marcador parcial). Para mostrar, no para puntuar.
+export type LiveScore = { home: string; away: string; hs: number; as: number; status: string }
+
+export async function fetchLiveScores(): Promise<LiveScore[]> {
+  const url = 'https://www.thesportsdb.com/api/v1/json/123/eventsseason.php?id=4429&s=2026'
+  let json: any
+  try {
+    const res = await fetch(url)
+    if (!res.ok) return []
+    json = await res.json()
+  } catch {
+    return []
+  }
+  const events: any[] = json.events || []
+  const FINISHED = new Set(['FT', 'AET', 'PEN', 'AP', 'Match Finished'])
+  const NOT_STARTED = new Set(['NS', ''])
+  const out: LiveScore[] = []
+  for (const e of events) {
+    const st = String(e.strStatus ?? '').trim()
+    if (FINISHED.has(st) || NOT_STARTED.has(st)) continue // solo lo que está en juego
+    const hs = e.intHomeScore, aw = e.intAwayScore
+    if (hs == null || aw == null || hs === '' || aw === '') continue
+    const home = EN_NORM_TO_ES[norm(String(e.strHomeTeam ?? ''))]
+    const away = EN_NORM_TO_ES[norm(String(e.strAwayTeam ?? ''))]
+    if (!home || !away) continue
+    out.push({ home, away, hs: Number(hs), as: Number(aw), status: String(e.strProgress || st) })
   }
   return out
 }

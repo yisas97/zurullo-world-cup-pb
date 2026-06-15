@@ -1,7 +1,10 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import * as api from '../lib/api'
+import type { LiveScore } from '../lib/api'
 import type { Match, Player, Prediction, Session } from '../lib/types'
-import { countdown, dayKey, dayLabel, isLocked, points, timeLabel } from '../lib/util'
+import { countdown, dayKey, dayLabel, isLocked, liveLabel, points, timeLabel } from '../lib/util'
+
+type Live = { hs: number; as: number; status: string }
 
 export default function Predictions({
   session, matches, players, preds, onSaved,
@@ -11,6 +14,25 @@ export default function Predictions({
   const jornadas = useMemo(() => [...new Set(matches.map(m => m.jornada))].sort(), [matches])
   const [jornada, setJornada] = useState<number>(jornadas[0] ?? 1)
   const now = Date.now()
+
+  // Marcadores en vivo (se refrescan cada 60s)
+  const [live, setLive] = useState<LiveScore[]>([])
+  useEffect(() => {
+    let on = true
+    const load = () => api.fetchLiveScores().then(l => { if (on) setLive(l) }).catch(() => {})
+    load()
+    const id = setInterval(load, 60000)
+    return () => { on = false; clearInterval(id) }
+  }, [])
+
+  // Devuelve el marcador en vivo de un partido (orientado a local/visitante), si lo hay
+  const liveFor = (m: Match): Live | undefined => {
+    const r = live.find(l => l.home === m.home_team && l.away === m.away_team)
+    if (r) return { hs: r.hs, as: r.as, status: r.status }
+    const rr = live.find(l => l.home === m.away_team && l.away === m.home_team)
+    if (rr) return { hs: rr.as, as: rr.hs, status: rr.status } // estaban invertidos
+    return undefined
+  }
 
   const mine = useMemo(() => {
     const map = new Map<number, Prediction>()
@@ -55,7 +77,8 @@ export default function Predictions({
             {matchesOfJornada.filter(m => dayKey(m.kickoff) === d).map(m => (
               <MatchCard
                 key={m.id} m={m} session={session} players={players} now={now}
-                myPred={mine.get(m.id)} allPreds={byMatch.get(m.id) ?? []} onSaved={onSaved}
+                myPred={mine.get(m.id)} allPreds={byMatch.get(m.id) ?? []}
+                live={liveFor(m)} onSaved={onSaved}
               />
             ))}
           </div>
@@ -66,13 +89,14 @@ export default function Predictions({
 }
 
 function MatchCard({
-  m, session, players, now, myPred, allPreds, onSaved,
+  m, session, players, now, myPred, allPreds, live, onSaved,
 }: {
   m: Match; session: Session; players: Player[]; now: number
-  myPred?: Prediction; allPreds: Prediction[]; onSaved: () => void
+  myPred?: Prediction; allPreds: Prediction[]; live?: Live; onSaved: () => void
 }) {
-  const locked = isLocked(m.deadline, now)
   const played = m.real_home != null && m.real_away != null
+  const inPlay = !played && !!live
+  const locked = isLocked(m.deadline, now)
   const [home, setHome] = useState(myPred?.home != null ? String(myPred.home) : '')
   const [away, setAway] = useState(myPred?.away != null ? String(myPred.away) : '')
   const [busy, setBusy] = useState(false)
@@ -97,42 +121,70 @@ function MatchCard({
     : p === 1 ? 'bg-yellow-500/30 text-yellow-300'
     : p === 0 ? 'bg-red-500/30 text-red-300' : 'bg-white/5 text-white/50'
 
+  const statusBadge = played ? (
+    <span className="rounded-full bg-green-500/20 px-2.5 py-0.5 font-bold text-green-300">● Finalizado</span>
+  ) : inPlay ? (
+    <span className="rounded-full bg-red-500/25 px-2.5 py-0.5 font-bold text-red-300">🔴 EN VIVO · {liveLabel(live!.status)}</span>
+  ) : locked ? (
+    <span className="rounded-full bg-white/10 px-2.5 py-0.5 font-semibold text-white/50">Cerrado · por jugar</span>
+  ) : (
+    <span className="rounded-full bg-yellow-500/20 px-2.5 py-0.5 font-semibold text-yellow-300">Abierto · {countdown(m.deadline, now)}</span>
+  )
+
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
-      <div className="mb-2 flex items-center justify-between text-xs">
+    <div className={`rounded-xl border bg-white/[0.03] p-3 ${played ? 'border-green-500/20' : inPlay ? 'border-red-500/30' : locked ? 'border-white/10' : 'border-yellow-500/25'}`}>
+      <div className="mb-3 flex items-center justify-between text-xs">
         <span className="rounded bg-white/10 px-2 py-0.5 font-semibold text-white/70">
           Grupo {m.grupo} · {timeLabel(m.kickoff)}
         </span>
-        {played ? (
-          <span className="font-bold text-green-400">
-            Final: {m.real_home}-{m.real_away}{m.went_penalties && ' (pen.)'}
-          </span>
-        ) : locked ? (
-          <span className="font-semibold text-red-400">cerrado</span>
-        ) : (
-          <span className="font-semibold text-yellow-300">{countdown(m.deadline, now)}</span>
-        )}
+        {statusBadge}
       </div>
 
-      {/* Tu pronostico */}
+      {/* Equipos + marcador (resultado real si ya jugó, o tu pronóstico si no) */}
       <div className="flex items-center gap-2">
         <div className="flex-1 text-right font-semibold">
           {m.home_team} <span className="text-lg">{m.home_flag}</span>
         </div>
-        <input
-          type="number" min={0} value={home} disabled={locked}
-          onChange={e => setHome(e.target.value)}
-          className="w-12 rounded-lg border border-white/15 bg-black/40 py-1.5 text-center text-lg font-bold outline-none focus:border-green-400 disabled:opacity-50"
-        />
-        <span className="text-white/40">-</span>
-        <input
-          type="number" min={0} value={away} disabled={locked}
-          onChange={e => setAway(e.target.value)}
-          className="w-12 rounded-lg border border-white/15 bg-black/40 py-1.5 text-center text-lg font-bold outline-none focus:border-green-400 disabled:opacity-50"
-        />
+
+        {played ? (
+          <div className="flex items-center gap-2 rounded-lg bg-green-500/15 px-3 py-1 text-2xl font-black text-green-300">
+            <span>{m.real_home}</span><span className="text-white/30">-</span><span>{m.real_away}</span>
+          </div>
+        ) : inPlay ? (
+          <div className="flex items-center gap-2 rounded-lg bg-red-500/15 px-3 py-1 text-2xl font-black text-red-300">
+            <span>{live!.hs}</span><span className="text-white/30">-</span><span>{live!.as}</span>
+          </div>
+        ) : locked ? (
+          <div className="flex items-center gap-2 text-lg font-bold text-white/70">
+            <span className="w-11 rounded-lg bg-black/40 py-1 text-center">{home || '–'}</span>
+            <span className="text-white/30">-</span>
+            <span className="w-11 rounded-lg bg-black/40 py-1 text-center">{away || '–'}</span>
+          </div>
+        ) : (
+          <>
+            <input
+              type="number" min={0} value={home} onChange={e => setHome(e.target.value)}
+              className="w-12 rounded-lg border border-white/15 bg-black/40 py-1.5 text-center text-lg font-bold outline-none focus:border-green-400"
+            />
+            <span className="text-white/40">-</span>
+            <input
+              type="number" min={0} value={away} onChange={e => setAway(e.target.value)}
+              className="w-12 rounded-lg border border-white/15 bg-black/40 py-1.5 text-center text-lg font-bold outline-none focus:border-green-400"
+            />
+          </>
+        )}
+
         <div className="flex-1 font-semibold">
           <span className="text-lg">{m.away_flag}</span> {m.away_team}
         </div>
+      </div>
+
+      {/* Etiqueta que aclara qué es el número del centro */}
+      <div className={`mt-1 text-center text-[11px] uppercase tracking-wide ${inPlay ? 'text-red-300/80' : 'text-white/40'}`}>
+        {played
+          ? `Resultado final${m.went_penalties ? ' (penales)' : ''}`
+          : inPlay ? 'Resultado del momento (en juego)'
+          : locked ? 'Tu pronóstico (ya no editable)' : 'Tu pronóstico'}
       </div>
 
       {!locked && (
@@ -147,23 +199,28 @@ function MatchCard({
         </div>
       )}
 
-      {/* Pronosticos de todos (visibles al cerrar el partido) */}
-      <div className="mt-3 grid grid-cols-2 gap-1.5 border-t border-white/10 pt-3 sm:grid-cols-4">
-        {players.map(pl => {
-          const pr = allPreds.find(p => p.player_id === pl.id)
-          const isMe = pl.id === session.id
-          const hidden = pr?.hidden ?? (!isMe && !locked)
-          const pts = played ? points(pr, m) : null
-          return (
-            <div key={pl.id} className={`rounded-lg px-2 py-1 text-center text-xs ${pointColor(pts)}`}>
-              <div className="truncate font-semibold text-white/80">{pl.name}</div>
-              <div className="font-mono text-sm">
-                {hidden ? '🔒' : pr && pr.home != null ? `${pr.home}-${pr.away}` : '—'}
-                {pts != null && <span className="ml-1 font-bold">+{pts}</span>}
+      {/* Pronósticos de todos (visibles al cerrar el partido) */}
+      <div className="mt-3 border-t border-white/10 pt-3">
+        <div className="mb-1.5 text-[11px] uppercase tracking-wide text-white/40">
+          Pronósticos {played && '· puntos'}
+        </div>
+        <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
+          {players.map(pl => {
+            const pr = allPreds.find(p => p.player_id === pl.id)
+            const isMe = pl.id === session.id
+            const hidden = pr?.hidden ?? (!isMe && !locked)
+            const pts = played ? points(pr, m) : null
+            return (
+              <div key={pl.id} className={`rounded-lg px-2 py-1 text-center text-xs ${pointColor(pts)} ${isMe ? 'ring-1 ring-white/25' : ''}`}>
+                <div className="truncate font-semibold text-white/80">{pl.name}{isMe && ' (tú)'}</div>
+                <div className="font-mono text-sm">
+                  {hidden ? '🔒' : pr && pr.home != null ? `${pr.home}-${pr.away}` : '—'}
+                  {pts != null && <span className="ml-1 font-bold">+{pts}</span>}
+                </div>
               </div>
-            </div>
-          )
-        })}
+            )
+          })}
+        </div>
       </div>
     </div>
   )

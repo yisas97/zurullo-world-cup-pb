@@ -28,6 +28,19 @@ export const dayKey = (iso: string) =>
 export const isLocked = (deadlineIso: string, now: number) =>
   now >= new Date(deadlineIso).getTime()
 
+// Estado de un partido en vivo a texto legible
+export function liveLabel(status: string): string {
+  const s = status.trim().toUpperCase()
+  if (s === 'HT') return 'Entretiempo'
+  if (s === '1H') return '1er tiempo'
+  if (s === '2H') return '2do tiempo'
+  if (s === 'ET') return 'Prórroga'
+  if (s === 'BT') return 'Descanso prórroga'
+  if (s === 'P' || s === 'PEN') return 'Penales'
+  if (/^\d+'?$/.test(s)) return `min ${s.replace("'", '')}'`
+  return status || 'En juego'
+}
+
 // "faltan 3h 12m" / "faltan 2d"
 export function countdown(deadlineIso: string, now: number): string {
   let s = Math.floor((new Date(deadlineIso).getTime() - now) / 1000)
