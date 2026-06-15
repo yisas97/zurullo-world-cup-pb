@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react'
 import * as api from '../lib/api'
-import type { Match, Player, Session } from '../lib/types'
+import type { Match, Session } from '../lib/types'
 import { dayLabel, timeLabel } from '../lib/util'
 
 export default function Admin({
-  session, matches, players, onSaved,
+  session, matches, onSaved,
 }: {
-  session: Session; matches: Match[]; players: Player[]; onSaved: () => void
+  session: Session; matches: Match[]; onSaved: () => void
 }) {
   const jornadas = useMemo(() => [...new Set(matches.map(m => m.jornada))].sort(), [matches])
   const [jornada, setJornada] = useState<number>(jornadas[0] ?? 1)
@@ -38,7 +38,11 @@ export default function Admin({
       </section>
 
       <BonusResults session={session} onSaved={onSaved} />
-      <WorstPoints session={session} players={players} onSaved={onSaved} />
+
+      <section className="rounded-xl border border-white/10 bg-white/[0.03] p-4 text-sm text-white/50">
+        El bonus de la <b>peor selección</b> ahora se calcula <b>automáticamente</b> (1 punto por
+        cada 3 goles en contra + 1 punto por cada gol a favor de la selección elegida).
+      </section>
     </div>
   )
 }
@@ -156,41 +160,5 @@ function BonusResults({ session, onSaved }: { session: Session; onSaved: () => v
         </button>
       </div>
     </section>
-  )
-}
-
-function WorstPoints({ session, players, onSaved }: { session: Session; players: Player[]; onSaved: () => void }) {
-  return (
-    <section className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
-      <h3 className="mb-1 font-bold">Puntos del reto "peor selección"</h3>
-      <p className="mb-3 text-xs text-white/40">Asigna manualmente los puntos de cada jugador (3 goles en contra = 1 pt, 1 gol a favor = 1 pt).</p>
-      <div className="space-y-2">
-        {players.map(pl => <WorstRow key={pl.id} pl={pl} session={session} onSaved={onSaved} />)}
-      </div>
-    </section>
-  )
-}
-
-function WorstRow({ pl, session, onSaved }: { pl: Player; session: Session; onSaved: () => void }) {
-  const [pts, setPts] = useState('')
-  const [busy, setBusy] = useState(false)
-  const [msg, setMsg] = useState('')
-  async function save() {
-    setBusy(true); setMsg('')
-    try {
-      await api.setWorstPoints(session, pl.id, Number(pts || 0))
-      setMsg('✓'); onSaved()
-    } catch (e) { setMsg((e as Error).message) } finally { setBusy(false) }
-  }
-  return (
-    <div className="flex items-center gap-3 text-sm">
-      <span className="w-24 font-semibold">{pl.name}</span>
-      <input type="number" min={0} value={pts} onChange={e => setPts(e.target.value)}
-        placeholder="0" className="w-16 rounded bg-black/40 py-1 text-center" />
-      <button onClick={save} disabled={busy} className="rounded bg-green-500 px-3 py-1 font-bold text-black disabled:opacity-40">
-        {busy ? '…' : 'Guardar'}
-      </button>
-      {msg && <span className="text-xs text-white/60">{msg}</span>}
-    </div>
   )
 }

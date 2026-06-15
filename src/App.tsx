@@ -125,7 +125,7 @@ export default function App() {
           <Bonus session={session} players={players} bonus={bonus} matches={matches} onSaved={refresh} />
         )}
         {!loading && tab === 'admin' && session.is_admin && (
-          <Admin session={session} matches={matches} players={players} onSaved={refresh} />
+          <Admin session={session} matches={matches} onSaved={refresh} />
         )}
         {!loading && tab === 'reglas' && <Rules />}
       </main>
