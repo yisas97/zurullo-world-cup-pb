@@ -54,7 +54,7 @@ export default function Login({ onLogin }: { onLogin: (s: Session) => void }) {
               Escribe tu PIN. Si es tu primera vez, el que pongas quedará como tu PIN.
             </p>
             <input
-              type="password" inputMode="numeric" autoFocus value={pin}
+              type="password" inputMode="text" autoFocus value={pin}
               onChange={e => setPin(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && submit()}
               placeholder="PIN (mín. 3 caracteres)"
