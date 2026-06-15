@@ -25,8 +25,11 @@ export default function Predictions({
     return () => { on = false; clearInterval(id) }
   }, [])
 
-  // Devuelve el marcador en vivo de un partido (orientado a local/visitante), si lo hay
+  // Devuelve el marcador en vivo de un partido (orientado a local/visitante), si lo hay.
+  // Si ya pasaron > 3h del inicio, el "en vivo" de la API casi seguro está atrasado -> se ignora.
+  const MAX_LIVE_MS = 2.5 * 60 * 60 * 1000
   const liveFor = (m: Match): Live | undefined => {
+    if (now - new Date(m.kickoff).getTime() > MAX_LIVE_MS) return undefined
     const r = live.find(l => l.home === m.home_team && l.away === m.away_team)
     if (r) return { hs: r.hs, as: r.as, status: r.status }
     const rr = live.find(l => l.home === m.away_team && l.away === m.home_team)
@@ -121,10 +124,13 @@ function MatchCard({
     : p === 1 ? 'bg-yellow-500/30 text-yellow-300'
     : p === 0 ? 'bg-red-500/30 text-red-300' : 'bg-white/5 text-white/50'
 
+  const started = now >= new Date(m.kickoff).getTime()
   const statusBadge = played ? (
     <span className="rounded-full bg-green-500/20 px-2.5 py-0.5 font-bold text-green-300">● Finalizado</span>
   ) : inPlay ? (
     <span className="rounded-full bg-red-500/25 px-2.5 py-0.5 font-bold text-red-300">🔴 EN VIVO · {liveLabel(live!.status)}</span>
+  ) : locked && started ? (
+    <span className="rounded-full bg-blue-500/20 px-2.5 py-0.5 font-semibold text-blue-200">Esperando resultado</span>
   ) : locked ? (
     <span className="rounded-full bg-white/10 px-2.5 py-0.5 font-semibold text-white/50">Cerrado · por jugar</span>
   ) : (
@@ -132,7 +138,7 @@ function MatchCard({
   )
 
   return (
-    <div className={`rounded-xl border bg-white/[0.03] p-3 ${played ? 'border-green-500/20' : inPlay ? 'border-red-500/30' : locked ? 'border-white/10' : 'border-yellow-500/25'}`}>
+    <div className={`rounded-xl border bg-white/[0.03] p-3 ${played ? 'border-green-500/20' : inPlay ? 'border-red-500/30' : !locked ? 'border-yellow-500/25' : 'border-white/10'}`}>
       <div className="mb-3 flex items-center justify-between text-xs">
         <span className="rounded bg-white/10 px-2 py-0.5 font-semibold text-white/70">
           Grupo {m.grupo} · {timeLabel(m.kickoff)}
