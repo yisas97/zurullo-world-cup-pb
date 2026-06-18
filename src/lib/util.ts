@@ -34,12 +34,25 @@ export const dayKey = (iso: string) =>
 export const isLocked = (deadlineIso: string, now: number) =>
   now >= new Date(deadlineIso).getTime()
 
-// Estado de un partido en vivo a texto legible
-export function liveLabel(status: string): string {
-  const s = status.trim().toUpperCase()
+// Estado de un partido en vivo a texto legible.
+// status viene de football-data (IN_PLAY / PAUSED) y, si hay, el minuto.
+export function liveLabel(status: string, minute?: number | null): string {
+  const s = (status || '').trim().toUpperCase()
+  const min = minute != null && minute > 0 ? ` · ${minute}'` : ''
+
+  // football-data
+  if (s === 'PAUSED') return minute != null && minute > 45 ? 'Pausa' : 'Entretiempo'
+  if (s === 'IN_PLAY') {
+    if (minute == null) return 'En juego'
+    if (minute <= 45) return `1er tiempo${min}`
+    if (minute <= 90) return `2do tiempo${min}`
+    return `Tiempo extra${min}`
+  }
+
+  // códigos cortos (compatibilidad con la fuente vieja)
   if (s === 'HT') return 'Entretiempo'
-  if (s === '1H') return '1er tiempo'
-  if (s === '2H') return '2do tiempo'
+  if (s === '1H') return `1er tiempo${min}`
+  if (s === '2H') return `2do tiempo${min}`
   if (s === 'ET') return 'Prórroga'
   if (s === 'BT') return 'Descanso prórroga'
   if (s === 'P' || s === 'PEN') return 'Penales'

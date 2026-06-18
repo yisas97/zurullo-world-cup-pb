@@ -78,6 +78,34 @@ export async function setWorstPoints(s: Session, targetPlayer: number, pts: numb
   if (error) throw new Error(error.message)
 }
 
+// Dispara la Edge Function que trae los resultados reales (football-data.org) y
+// los escribe en la BD. Devuelve el resumen { actualizados, cambios, sin_emparejar }.
+export type LiveScore = { home: string; away: string; hs: number; as: number; status: string; minute: number | null }
+
+export type SyncResult = {
+  ok?: boolean; actualizados?: number; finalizados_revisados?: number
+  cambios?: { partido: string; pen: boolean }[]; sin_emparejar?: any[]
+  en_vivo?: LiveScore[]; error?: string
+}
+
+export async function syncResults(): Promise<SyncResult> {
+  const { data, error } = await supabase.functions.invoke('sync-results')
+  if (error) throw new Error(error.message)
+  return data as SyncResult
+}
+
+// Marcadores EN VIVO ahora mismo, desde football-data (vía la Edge Function).
+// La misma llamada, de paso, guarda los partidos ya terminados.
+export async function fetchLiveScores(): Promise<LiveScore[]> {
+  try {
+    const { data, error } = await supabase.functions.invoke('sync-results')
+    if (error) return []
+    return (data?.en_vivo ?? []) as LiveScore[]
+  } catch {
+    return []
+  }
+}
+
 // Resultados reales del Mundial 2026 desde TheSportsDB (gratis, sin key, con CORS).
 // Devuelve solo partidos finalizados, con los equipos ya traducidos a español.
 export type RealResult = { home: string; away: string; hs: number; as: number }
@@ -104,32 +132,3 @@ export async function fetchRealResults(): Promise<RealResult[]> {
   return out
 }
 
-// Partidos EN JUEGO ahora mismo (marcador parcial). Para mostrar, no para puntuar.
-export type LiveScore = { home: string; away: string; hs: number; as: number; status: string }
-
-export async function fetchLiveScores(): Promise<LiveScore[]> {
-  const url = 'https://www.thesportsdb.com/api/v1/json/123/eventsseason.php?id=4429&s=2026'
-  let json: any
-  try {
-    const res = await fetch(url)
-    if (!res.ok) return []
-    json = await res.json()
-  } catch {
-    return []
-  }
-  const events: any[] = json.events || []
-  const FINISHED = new Set(['FT', 'AET', 'PEN', 'AP', 'Match Finished'])
-  const NOT_STARTED = new Set(['NS', ''])
-  const out: LiveScore[] = []
-  for (const e of events) {
-    const st = String(e.strStatus ?? '').trim()
-    if (FINISHED.has(st) || NOT_STARTED.has(st)) continue // solo lo que está en juego
-    const hs = e.intHomeScore, aw = e.intAwayScore
-    if (hs == null || aw == null || hs === '' || aw === '') continue
-    const home = EN_NORM_TO_ES[norm(String(e.strHomeTeam ?? ''))]
-    const away = EN_NORM_TO_ES[norm(String(e.strAwayTeam ?? ''))]
-    if (!home || !away) continue
-    out.push({ home, away, hs: Number(hs), as: Number(aw), status: String(e.strProgress || st) })
-  }
-  return out
-}

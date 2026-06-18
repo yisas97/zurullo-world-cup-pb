@@ -6,5 +6,5 @@ dist
 ZURULLO WORLD CUP.xlsx
 
 # Datos privados (las apuestas) y el Excel: NO se suben, quedan solo en tu PC
-supabase/*.sql
+supabase/*
 versiones_excel/*.xlsx

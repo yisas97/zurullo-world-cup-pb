@@ -6,7 +6,7 @@ import { countdown, dayKey, dayLabel, isLocked, liveLabel, points, shortDate, ti
 
 import Intro from './Intro'
 
-type Live = { hs: number; as: number; status: string }
+type Live = { hs: number; as: number; status: string; minute: number | null }
 
 export default function Predictions({
   session, matches, players, preds, onSaved,
@@ -28,14 +28,15 @@ export default function Predictions({
   }, [])
 
   // Devuelve el marcador en vivo de un partido (orientado a local/visitante), si lo hay.
-  // Si ya pasaron > 3h del inicio, el "en vivo" de la API casi seguro está atrasado -> se ignora.
-  const MAX_LIVE_MS = 2.5 * 60 * 60 * 1000
+  // football-data solo reporta IN_PLAY/PAUSED, así que es confiable; un guardado de 4h
+  // evita mostrar un partido que haya quedado "colgado" en vivo por datos atrasados.
+  const MAX_LIVE_MS = 4 * 60 * 60 * 1000
   const liveFor = (m: Match): Live | undefined => {
     if (now - new Date(m.kickoff).getTime() > MAX_LIVE_MS) return undefined
     const r = live.find(l => l.home === m.home_team && l.away === m.away_team)
-    if (r) return { hs: r.hs, as: r.as, status: r.status }
+    if (r) return { hs: r.hs, as: r.as, status: r.status, minute: r.minute }
     const rr = live.find(l => l.home === m.away_team && l.away === m.home_team)
-    if (rr) return { hs: rr.as, as: rr.hs, status: rr.status } // estaban invertidos
+    if (rr) return { hs: rr.as, as: rr.hs, status: rr.status, minute: rr.minute } // invertidos
     return undefined
   }
 
@@ -145,7 +146,9 @@ function MatchCard({
   const statusBadge = played ? (
     <span className="rounded-full bg-green-500/20 px-2.5 py-0.5 font-bold text-green-300">● Finalizado</span>
   ) : inPlay ? (
-    <span className="rounded-full bg-red-500/25 px-2.5 py-0.5 font-bold text-red-300">🔴 EN VIVO · {liveLabel(live!.status)}</span>
+    <span className="inline-flex items-center gap-1 rounded-full bg-red-500/25 px-2.5 py-0.5 font-bold text-red-300">
+      <span className="h-2 w-2 animate-pulse rounded-full bg-red-400" /> EN VIVO · {liveLabel(live!.status, live!.minute)}
+    </span>
   ) : locked && started ? (
     <span className="rounded-full bg-blue-500/20 px-2.5 py-0.5 font-semibold text-blue-200">Esperando resultado</span>
   ) : locked ? (
@@ -206,7 +209,7 @@ function MatchCard({
       <div className={`mt-1 text-center text-[11px] uppercase tracking-wide ${inPlay ? 'text-red-300/80' : 'text-white/40'}`}>
         {played
           ? `Resultado final${m.went_penalties ? ' (penales)' : ''}`
-          : inPlay ? 'Resultado del momento (en juego)'
+          : inPlay ? `Marcador en vivo · ${liveLabel(live!.status, live!.minute)}`
           : locked ? 'Tu pronóstico (ya no editable)' : 'Tu pronóstico'}
       </div>
 

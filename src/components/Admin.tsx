@@ -53,30 +53,21 @@ export default function Admin({
   )
 }
 
-function SyncButton({ session, matches, onSaved }: { session: Session; matches: Match[]; onSaved: () => void }) {
+function SyncButton({ onSaved }: { session: Session; matches: Match[]; onSaved: () => void }) {
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState('')
 
   async function sync() {
-    setBusy(true); setMsg('Consultando TheSportsDB…')
+    setBusy(true); setMsg('Consultando football-data…')
     try {
-      const real = await api.fetchRealResults()
-      let applied = 0
-      for (const m of matches) {
-        let hs: number | undefined, aw: number | undefined
-        const r = real.find(x => x.home === m.home_team && x.away === m.away_team)
-        if (r) { hs = r.hs; aw = r.as }
-        else {
-          const rr = real.find(x => x.home === m.away_team && x.away === m.home_team)
-          if (rr) { hs = rr.as; aw = rr.hs } // estaban invertidos local/visitante
-        }
-        if (hs == null || aw == null) continue
-        if (m.real_home === hs && m.real_away === aw) continue // ya estaba igual
-        await api.setResult(session, m.id, hs, aw, m.went_penalties)
-        applied++
-      }
-      setMsg(applied > 0 ? `✓ ${applied} resultado(s) actualizado(s)` : 'Sin novedades (todo al día)')
-      if (applied > 0) onSaved()
+      const r = await api.syncResults()
+      if (r.error) { setMsg('Error: ' + r.error); return }
+      const n = r.actualizados ?? 0
+      const pend = r.sin_emparejar?.length
+        ? ` · ${r.sin_emparejar.length} sin emparejar (revisa consola)` : ''
+      if (r.sin_emparejar?.length) console.warn('Partidos sin emparejar:', r.sin_emparejar)
+      setMsg((n > 0 ? `✓ ${n} resultado(s) actualizado(s)` : 'Sin novedades (todo al día)') + pend)
+      if (n > 0) onSaved()
     } catch (e) {
       setMsg((e as Error).message)
     } finally {

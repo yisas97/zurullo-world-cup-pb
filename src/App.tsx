@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { isConfigured } from './lib/supabase'
 import * as api from './lib/api'
 import type { Session, Match, Player, Prediction, BonusRow, Standing } from './lib/types'
@@ -47,6 +47,17 @@ export default function App() {
   }, [])
 
   useEffect(() => { if (session) loadAll(session) }, [session, loadAll])
+
+  // Al entrar/refrescar: pide a la BD que traiga los resultados reales (football-data).
+  // Si actualizó alguno, recarga para mostrarlos. Se dispara una sola vez por carga.
+  const synced = useRef(false)
+  useEffect(() => {
+    if (!session || synced.current) return
+    synced.current = true
+    api.syncResults()
+      .then(r => { if ((r.actualizados ?? 0) > 0) loadAll(session) })
+      .catch(() => {}) // si falla (función no desplegada, etc.) no rompe la app
+  }, [session, loadAll])
 
   function onLogin(s: Session) {
     localStorage.setItem(SESSION_KEY, JSON.stringify(s))
